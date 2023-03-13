@@ -1,5 +1,6 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:try_firbs/View/AddCar.dart';
 import 'package:try_firbs/View/AllAuctionScreen.dart';
 import 'package:try_firbs/View/MyAuctionScreen.dart';
@@ -15,11 +16,28 @@ class AppMain extends StatefulWidget {
 }
 
 class _AppMainState extends State<AppMain> {
+  String? deviceToken;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  void onDidReceiveNotificationResponse(
+      NotificationResponse notificationResponse) async {
+    final String? payload = notificationResponse.payload;
+    if (notificationResponse.payload != null) {
+      debugPrint('notification payload: $payload');
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (context) => AppMain()),
+    );
+  }
+
   int currentIndex = 0;
   final List<Widget> screens = [
     const MyAuctionScreen(),
     const AllAuctionScreen(),
   ];
+
   @override
   void initState() {
     super.initState();

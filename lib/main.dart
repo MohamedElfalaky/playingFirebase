@@ -6,32 +6,55 @@ import 'package:try_firbs/Data/Cubits/AddCar/add_car_cubit.dart';
 import 'package:try_firbs/Data/debug/app_bloc_observer.dart';
 import 'package:try_firbs/View/AppMain.dart';
 import 'package:try_firbs/helpers/CacheHelper.dart';
+import 'package:try_firbs/helpers/NotificationHelper.dart';
 import 'package:try_firbs/helpers/dio_helper.dart';
 import 'firebase_options.dart';
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
+  NotificationHelper().showNotificationHeadUp(message);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  Bloc.observer = MyBlocObserver();
-  CacheHelper.init();
-  DioHelper.init();
-
 //init Firbase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await FirebaseMessaging.instance.getInitialMessage();
 
-// request permisiion
-  requestNotificationPermission();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-//getToken
-  getDeviceToken();
+  Bloc.observer = MyBlocObserver();
+  await CacheHelper.init();
+  DioHelper.init();
+
+//
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  NotificationHelper notiHelper = NotificationHelper();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // request permisiion //getToken
+    notiHelper.requestPermissionAndGetToken();
+
+    // create local notification settings and info
+    notiHelper.configLocalNotification();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,35 +77,3 @@ class MyApp extends StatelessWidget {
 ///
 ///
 
-String? deviceToken;
-
-requestNotificationPermission() async {
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
-
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('User granted permission');
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    print('User granted provisional permission');
-  } else {
-    print('User declined or has not accepted permission');
-  }
-
-  print('User granted permission: ${settings.authorizationStatus}');
-}
-
-getDeviceToken() async {
-  await FirebaseMessaging.instance.getToken().then((dToken) {
-    deviceToken = dToken;
-    print("device token is${deviceToken}");
-  });
-}

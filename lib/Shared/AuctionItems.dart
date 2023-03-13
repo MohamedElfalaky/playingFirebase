@@ -44,7 +44,9 @@ class _AuctionItemsState extends State<AuctionItems> {
         print(controller.isRunning.toString());
         print("controller.isRunning");
         Future.delayed(Duration(milliseconds: 1), () {
-          setState(() {});
+          if (mounted) {
+            setState(() {});
+          }
         });
       },
     );
